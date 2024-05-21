@@ -103,6 +103,8 @@ public class GameField : MonoBehaviour
         GlobalEventUI.InvokeOnActiveWinPanel( IsSudokuValid());
 
     }
+  
+
     private bool IsSudokuValid()
     {
         for (int i = 0; i < 9; i++)
@@ -121,7 +123,7 @@ public class GameField : MonoBehaviour
         for (int col = 0; col < 9; col++)
         {
             int number = matrix[row, col].Number;
-            if (number != 0 && !seen.Add(number))
+            if (number == 0 || !seen.Add(number))
             {
                 return false;
             }
@@ -135,7 +137,7 @@ public class GameField : MonoBehaviour
         for (int row = 0; row < 9; row++)
         {
             int number = matrix[row, col].Number;
-            if (number != 0 && !seen.Add(number))
+            if (number == 0 || !seen.Add(number))
             {
                 return false;
             }
@@ -153,7 +155,7 @@ public class GameField : MonoBehaviour
             for (int col = 0; col < 3; col++)
             {
                 int number = matrix[startRow + row, startCol + col].Number;
-                if (number != 0 && !seen.Add(number))
+                if (number == 0 || !seen.Add(number))
                 {
                     return false;
                 }
