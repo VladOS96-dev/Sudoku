@@ -8,38 +8,31 @@ using UnityEngine.UI;
 public class Item : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private TextMeshProUGUI textNumber;
-    public int number;
-    public TypeItem typeItem;
-    public TypeHighligth typeHighligth;
-    public System.Action<int> OnClick;
-    public int row;
-    public int column;
-    public Image img;
+    [SerializeField] private Color setValueColor;
+    [SerializeField] private Color matchCellColor;
+    [SerializeField] private Color chooselineColor;
+    [SerializeField] private Color emptyColor;
+    [SerializeField] private Color selectedColor;
+    [SerializeField] private Color rightCellColor;
+    public int row { get; private set; }
+    public int column { get;private set; }
+    public int Number { get; private set; }
+    private Image img;
     private bool isNoteMode;
     private HashSet<int> notes = new HashSet<int>();
+    private bool isValid;
+    public TypeItem typeItem { get; private set; }
 
     void Start()
     {
         img = GetComponentInChildren<Image>();
-    }
-
-    void Update() { }
-
-    public void SetTypeItem(TypeItem typeItem)
-    {
-        this.typeItem = typeItem;
+       
     }
 
     public void SetValidCell(bool isValid)
     {
-        if (isValid)
-        {
-            img.color = Color.red;
-        }
-        else
-        {
-            img.color = Color.green;
-        }
+        img.color = isValid ? matchCellColor : rightCellColor;
+        this.isValid = isValid;
     }
 
     public void SetHighligth(TypeHighligth typeHighligth)
@@ -47,47 +40,53 @@ public class Item : MonoBehaviour, IPointerClickHandler
         switch (typeHighligth)
         {
             case TypeHighligth.EmptyHighligth:
-                img.color = Color.white;
+                if (!isValid)
+                {
+                    img.color = emptyColor;
+                }
                 break;
             case TypeHighligth.MatchCell:
-                img.color = Color.grey;
+                img.color = matchCellColor;
                 break;
             case TypeHighligth.Chooseline:
-                img.color = Color.blue;
+                if (!isValid)
+                {
+                    img.color = chooselineColor;
+                }
+                break;
+            case TypeHighligth.SetValue:
+                if (Number!=0) 
+                { 
+                    textNumber.color = setValueColor; 
+                }
+                
+                break;
+            case TypeHighligth.SelectedColor:
+                img.color = selectedColor;
                 break;
         }
-        this.typeHighligth = typeHighligth;
     }
-
+    public void SetRowColumn(int row,int column) 
+    {
+    this.row=row;
+        this.column=column;
+    }
     public void SetNumber(int number = 0)
     {
-        if (this.typeItem == TypeItem.Empty)
-        {
-            if (number != 0)
-            {
-                this.number = number;
-                textNumber.text = number.ToString();
-            }
-            else
-            {
-                this.number = number;
-                textNumber.text = "";
-            }
-        }
+        textNumber.text = number != 0 ? number.ToString() : "";
+        Number = number;
+
     }
 
     public void ClearCell()
     {
-        this.number = 0;
         textNumber.text = "";
-        typeItem = TypeItem.Empty;
+        Number = 0;
         notes.Clear();
-    }
-
-    public void SetPos(int row, int column)
-    {
-        this.row = row;
-        this.column = column;
+        isNoteMode= false;
+        isValid= false;
+        textNumber.color = Color.black;
+        textNumber.fontSize = 60;
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -97,14 +96,11 @@ public class Item : MonoBehaviour, IPointerClickHandler
 
     public void ToggleNoteMode()
     {
-        isNoteMode = !isNoteMode;
-        if (isNoteMode)
+        isNoteMode = true;
+        Number = 0;
+        if (notes.Count==0)
         {
-            textNumber.fontSize = 30;
-        }
-        else
-        {
-            textNumber.fontSize = 60;
+            textNumber.fontSize = isNoteMode ? 30 : 60;
         }
     }
 
@@ -119,23 +115,29 @@ public class Item : MonoBehaviour, IPointerClickHandler
         if (!isNoteMode || !notes.Remove(number)) return;
         UpdateNoteText();
     }
-
+    public void SetTypeItem(TypeItem typeItem)
+    {
+        this.typeItem = typeItem;
+    }
     private void UpdateNoteText()
     {
-        
         textNumber.text = string.Join(",", notes);
     }
+
 }
 
 public enum TypeItem 
 {
-    Empty,
-    Fill
+    Fill,
+    Empty
+    
 }
 public enum TypeHighligth 
 {
     EmptyHighligth,
     MatchCell,
-    Chooseline
+    Chooseline,
+    SetValue,
+    SelectedColor
 
 }

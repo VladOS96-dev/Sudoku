@@ -1,15 +1,9 @@
-
 using System.Collections.Generic;
-using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
-
 
 public class SudokuGenerator
 {
-
     private int[,] grid = new int[9, 9];
-    public List<int> tmpNumber = new List<int>();
     private System.Random random = new System.Random();
     private List<int> templteNumber = new List<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
@@ -22,7 +16,7 @@ public class SudokuGenerator
 
     private void RemoveNumbers(int difficulty)
     {
-        int cellsToRemove = difficulty; // Чем больше значение, тем сложнее головоломка
+        int cellsToRemove = difficulty; // Чем выше значение, тем сложнее головоломка
         while (cellsToRemove > 0)
         {
             int row = random.Next(0, 9);
@@ -68,14 +62,14 @@ public class SudokuGenerator
                             {
                                 return true;
                             }
-                            grid[row, col] = 0; 
+                            grid[row, col] = 0;
                         }
                     }
-                    return false; 
+                    return false;
                 }
             }
         }
-        return true; 
+        return true;
     }
 
     private void Shuffle(List<int> list)
@@ -93,7 +87,6 @@ public class SudokuGenerator
 
     private bool IsValid(int number, int row, int col)
     {
-        
         for (int i = 0; i < 9; i++)
         {
             if (grid[row, i] == number || grid[i, col] == number)
@@ -102,7 +95,6 @@ public class SudokuGenerator
             }
         }
 
-        
         int startRow = (row / 3) * 3;
         int startCol = (col / 3) * 3;
         for (int i = 0; i < 3; i++)
@@ -118,5 +110,4 @@ public class SudokuGenerator
 
         return true;
     }
-
 }

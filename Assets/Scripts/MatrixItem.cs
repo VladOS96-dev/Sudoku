@@ -5,13 +5,11 @@ using System.Linq;
 using System;
 public class MatrixItem : MonoBehaviour
 {
-    public Item [,] matrix;
-    public Item[] items;
+    public Item[,] matrix { get;private set; }
     void Awake()
     {
         matrix=new Item[3,3];
         Item[] items = GetComponentsInChildren<Item>();
-        this.items= items;
         int index = 0;
         for (int i = 0; i < 3; i++)
         {
@@ -23,9 +21,4 @@ public class MatrixItem : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

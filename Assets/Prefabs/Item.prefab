@@ -51,10 +51,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   textNumber: {fileID: 6146269299847975122}
-  number: 0
-  typeItem: 0
-  row: 0
-  column: 0
+  setValueColor: {r: 0, g: 0.71637934, b: 0.8490566, a: 1}
+  matchCellColor: {r: 0.5320754, g: 0.035022456, b: 0, a: 1}
+  chooselineColor: {r: 0.019183636, g: 0, b: 1, a: 1}
+  emptyColor: {r: 1, g: 1, b: 1, a: 1}
+  selectedColor: {r: 0.93207544, g: 0.81053334, b: 0, a: 1}
+  rightCellColor: {r: 0, g: 1, b: 0.14373732, a: 1}
 --- !u!1 &3524887726779259551
 GameObject:
   m_ObjectHideFlags: 0

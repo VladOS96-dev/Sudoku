@@ -1,35 +1,55 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 public class GameField : MonoBehaviour
 {
-    public MatrixItem[] matrixItems;
-    public Item[,] matrix;
     private SudokuGenerator sudokuGenerator = new SudokuGenerator();
-    private GameManager gameManager;
-    public bool isNoteMode = false;
+    [SerializeField]private GameManager gameManager;
+    private SaveManager saveManager=new SaveManager();
+    private Item[,] matrix;
 
-    private void Start()
+    public bool IsNoteMode { get; private set; }
+
+    private void Awake()
     {
         GlobalEventUI.OnClickGenerateFiledButton += GenerateField;
         GlobalEventUI.OnCheckField += CheckSolution;
         GlobalEventUI.OnCheckCell += CheckCell;
         GlobalEventUI.OnChooseCellInFiled += ActivateHighligth;
-        gameManager = FindObjectOfType<GameManager>();
-
-        matrixItems = GetComponentsInChildren<MatrixItem>();
+        GlobalEventUI.OnToggleNote += ToggleNote;
+      
+    }
+    private void Start()
+    {
+        FillMatrix();
+    }
+    public void SetMatrix(Item[,] matrix)
+    {
+        this.matrix = matrix;
+    }
+    private void ToggleNote(Item cell)
+    {
+        IsNoteMode = !IsNoteMode;
+        cell.ToggleNoteMode();
+    }
+    private void FillMatrix()
+    {
+        MatrixItem[] matrixItems = GetComponentsInChildren<MatrixItem>();
         matrix = new Item[9, 9];
 
         int indexMatrix = 0;
         int row = 0;
         int col = 0;
         int count = 0;
+
         for (int i = 0; i < 9; i++)
         {
             for (int j = 0; j < 9; j++)
             {
+                    
                 matrix[i, j] = matrixItems[indexMatrix].matrix[row, col];
                 count++;
                 col++;
@@ -54,151 +74,35 @@ public class GameField : MonoBehaviour
             }
         }
 
-
-
-        GenerateField(30);
     }
-
-
-    public void GenerateField(int countCell)
+    private void GenerateField(int difficulty)
     {
-        int[,] numbers = sudokuGenerator.GeneratePuzzle(countCell);
+
+        int[,] puzzle = sudokuGenerator.GeneratePuzzle(difficulty);
+        gameManager.SetSolution(puzzle);
+
         for (int i = 0; i < 9; i++)
         {
             for (int j = 0; j < 9; j++)
             {
+                matrix[i, j].SetTypeItem(puzzle[i, j] == 0 ? TypeItem.Empty : TypeItem.Fill);
                 matrix[i, j].ClearCell();
-                matrix[i, j].SetNumber(numbers[i, j]);
-                matrix[i, j].SetTypeItem(matrix[i, j].number == 0 ? TypeItem.Empty : TypeItem.Fill);
-                matrix[i, j].SetPos(i, j);
-            }
-        }
-    }
-
-    public void SaveGame()
-    {
-        int[,] grid = new int[9, 9];
-        for (int i = 0; i < 9; i++)
-        {
-            for (int j = 0; j < 9; j++)
-            {
-                grid[i, j] = matrix[i, j].number;
-            }
-        }
-        gameManager.SaveGame(grid);
-    }
-
-    public void LoadGame()
-    {
-        int[,] grid = gameManager.LoadGame();
-        if (grid != null)
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
+                if (puzzle[i, j] != 0)
                 {
-                    matrix[i, j].SetNumber(grid[i, j]);
-                    matrix[i, j].SetTypeItem(grid[i, j] == 0 ? TypeItem.Empty : TypeItem.Fill);
+                    matrix[i, j].SetNumber(puzzle[i, j]);
                 }
+                matrix[i, j].SetRowColumn(i,j);
+                matrix[i, j].SetHighligth(TypeHighligth.EmptyHighligth);
+               
             }
         }
     }
 
-    public void CheckSolution()
+    private void CheckSolution()
     {
-        if (IsSudokuValid())
-        {
-            Debug.Log("The solution is correct!");
-        }
-        else
-        {
-            Debug.Log("The solution is incorrect!");
-        }
+        GlobalEventUI.InvokeOnActiveWinPanel( IsSudokuValid());
+
     }
-
-    public void ActivateHighligth(Item cell)
-    {
-        for (int row = 0; row < 9; row++)
-        {
-            for (int col = 0; col < 9; col++)
-            {
-                matrix[row, col].SetHighligth(TypeHighligth.EmptyHighligth);
-            }
-        }
-        for (int col = 0; col < 9; col++)
-        {
-            matrix[cell.row, col].SetHighligth(TypeHighligth.Chooseline);
-        }
-
-        for (int row = 0; row < 9; row++)
-        {
-            matrix[row, cell.column].SetHighligth(TypeHighligth.Chooseline);
-        }
-
-        int startRow = (cell.row / 3) * 3;
-        int startCol = (cell.column / 3) * 3;
-
-        for (int row = 0; row < 3; row++)
-        {
-            for (int col = 0; col < 3; col++)
-            {
-                matrix[startRow + row, startCol + col].SetHighligth(TypeHighligth.Chooseline);
-            }
-        }
-    }
-
-    public void CheckCell(Item cell)
-    {
-        bool flag = false;
-
-        for (int col = 0; col < 9; col++)
-        {
-            matrix[cell.row, col].SetHighligth(TypeHighligth.Chooseline);
-            if (matrix[cell.row, col].number != 0 && cell.column != matrix[cell.row, col].column)
-            {
-                if (matrix[cell.row, col].number == cell.number)
-                {
-                    flag = true;
-                    matrix[cell.row, col].SetHighligth(TypeHighligth.MatchCell);
-                }
-            }
-        }
-
-        for (int row = 0; row < 9; row++)
-        {
-            matrix[row, cell.column].SetHighligth(TypeHighligth.Chooseline);
-            if (matrix[row, cell.column].number != 0 && cell.row != matrix[row, cell.column].row)
-            {
-                if (matrix[row, cell.column].number == cell.number)
-                {
-                    matrix[row, cell.column].SetHighligth(TypeHighligth.MatchCell);
-                    flag = true;
-                }
-            }
-        }
-
-        int startRow = (cell.row / 3) * 3;
-        int startCol = (cell.column / 3) * 3;
-
-        for (int row = 0; row < 3; row++)
-        {
-            for (int col = 0; col < 3; col++)
-            {
-                matrix[startRow + row, startCol + col].SetHighligth(TypeHighligth.Chooseline);
-                if (matrix[startRow + row, startCol + col].number != 0 && cell.row != matrix[startRow + row, startCol + col].row && cell.column != matrix[startRow + row, startCol + col].column)
-                {
-                    if (matrix[startRow + row, startCol + col].number == cell.number)
-                    {
-                        matrix[startRow + row, startCol + col].SetHighligth(TypeHighligth.MatchCell);
-                        flag = true;
-                    }
-                }
-            }
-        }
-
-        cell.SetValidCell(flag);
-    }
-
     private bool IsSudokuValid()
     {
         for (int i = 0; i < 9; i++)
@@ -216,7 +120,7 @@ public class GameField : MonoBehaviour
         HashSet<int> seen = new HashSet<int>();
         for (int col = 0; col < 9; col++)
         {
-            int number = matrix[row, col].number;
+            int number = matrix[row, col].Number;
             if (number != 0 && !seen.Add(number))
             {
                 return false;
@@ -230,7 +134,7 @@ public class GameField : MonoBehaviour
         HashSet<int> seen = new HashSet<int>();
         for (int row = 0; row < 9; row++)
         {
-            int number = matrix[row, col].number;
+            int number = matrix[row, col].Number;
             if (number != 0 && !seen.Add(number))
             {
                 return false;
@@ -248,7 +152,7 @@ public class GameField : MonoBehaviour
         {
             for (int col = 0; col < 3; col++)
             {
-                int number = matrix[startRow + row, startCol + col].number;
+                int number = matrix[startRow + row, startCol + col].Number;
                 if (number != 0 && !seen.Add(number))
                 {
                     return false;
@@ -257,24 +161,116 @@ public class GameField : MonoBehaviour
         }
         return true;
     }
-
-    public void ToggleNoteMode()
+    public void LoadField() 
     {
-        isNoteMode = !isNoteMode;
-        foreach (var item in matrix)
+        int[,] grid = saveManager.LoadGame();
+        if (grid != null)
         {
-            item.ToggleNoteMode();
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
+                    matrix[i,j].ClearCell();
+                    matrix[i, j].SetTypeItem(grid[i, j] == 0 ? TypeItem.Empty : TypeItem.Fill);
+                    matrix[i, j].SetNumber(grid[i, j]);
+                    matrix[i, j].SetRowColumn(i,j);
+                    
+                }
+            }
         }
     }
-
-    public void AddNoteToCell(int row, int col, int number)
+    public void SaveField() 
     {
-        matrix[row, col].AddNote(number);
+        int[,] grid = new int[9, 9];
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                grid[i, j] = matrix[i, j].Number;
+            }
+        }
+        saveManager.SaveGame(grid);
+    }
+    private void CheckCell(Item cell)
+    {
+        bool flag = false;
+
+        for (int col = 0; col < 9; col++)
+        {
+            matrix[cell.row, col].SetHighligth(TypeHighligth.Chooseline);
+            if (matrix[cell.row, col].Number != 0 && cell.column != matrix[cell.row, col].column)
+            {
+                if (matrix[cell.row, col].Number == cell.Number)
+                {   
+                    flag = true;
+                    matrix[cell.row, col].SetHighligth(TypeHighligth.MatchCell);
+                }
+            }
+        }
+
+        for (int row = 0; row < 9; row++)
+        {
+            matrix[row, cell.column].SetHighligth(TypeHighligth.Chooseline);
+            if (matrix[row, cell.column].Number != 0 && cell.row != matrix[row, cell.column].row)
+            {
+                if (matrix[row, cell.column].Number == cell.Number)
+                {
+                    matrix[row, cell.column].SetHighligth(TypeHighligth.MatchCell);
+                    flag = true;
+                }
+            }
+        }
+
+        int startRow = (cell.row / 3) * 3;
+        int startCol = (cell.column / 3) * 3;
+
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 3; col++)
+            {
+                matrix[startRow + row, startCol + col].SetHighligth(TypeHighligth.Chooseline);
+                if (matrix[startRow + row, startCol + col].Number != 0 && cell.row != matrix[startRow + row, startCol + col].row && cell.column != matrix[startRow + row, startCol + col].column)
+                {
+                    if (matrix[startRow + row, startCol + col].Number == cell.Number)
+                    {
+                        matrix[startRow + row, startCol + col].SetHighligth(TypeHighligth.MatchCell);
+                        flag = true;
+                    }
+                }
+            }
+        }
+
+        cell.SetValidCell(flag);
     }
 
-    public void RemoveNoteFromCell(int row, int col, int number)
+    private void ActivateHighligth(Item cell)
     {
-        matrix[row, col].RemoveNote(number);
+        if (cell.typeItem == TypeItem.Fill)
+            return;
+        for (int row = 0; row < 9; row++)
+        {
+            for (int col = 0; col < 9; col++)
+            {
+                matrix[row, col].SetHighligth(TypeHighligth.EmptyHighligth);
+            }
+        }
+
+        for (int i = 0; i < 9; i++)
+        {
+            matrix[cell.row, i].SetHighligth(TypeHighligth.Chooseline);
+            matrix[i, cell.column].SetHighligth(TypeHighligth.Chooseline);
+        }
+        int startRow = (cell.row / 3) * 3;
+        int startCol = (cell.column / 3) * 3;
+
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 3; col++)
+            {
+                matrix[startRow + row, startCol + col].SetHighligth(TypeHighligth.Chooseline);
+            }
+        }
+
     }
     private void OnDestroy()
     {
@@ -282,6 +278,6 @@ public class GameField : MonoBehaviour
         GlobalEventUI.OnCheckField -= CheckSolution;
         GlobalEventUI.OnCheckCell -= CheckCell;
         GlobalEventUI.OnChooseCellInFiled -= ActivateHighligth;
-
+        GlobalEventUI.OnToggleNote -= ToggleNote;
     }
 }
